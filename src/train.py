@@ -4,7 +4,6 @@ import json
 import pickle
 from pathlib import Path
 
-import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -13,23 +12,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.get_data import DATA_PATH
-
-NUMERIC = ["age", "fare", "sibsp", "parch"]
-CATEGORICAL = ["pclass", "sex"]
-TARGET = "survived"
+from src.prepare import CATEGORICAL, NUMERIC, TARGET, read_titanic
 
 
 def main():
-    with DATA_PATH.open(encoding="utf-8") as data_file:
-        columns = []
-        for line in data_file:
-            if line.startswith("@attribute "):
-                columns.append(line.split("'", 2)[1])
-            elif line.strip().lower() == "@data":
-                break
-        data = pd.read_csv(data_file, names=columns, na_values="?")
-
+    data = read_titanic()
     features = data[NUMERIC + CATEGORICAL]
     labels = data[TARGET]
     x_train, x_test, y_train, y_test = train_test_split(

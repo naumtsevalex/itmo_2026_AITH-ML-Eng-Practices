@@ -1,0 +1,38 @@
+schema: '2.0'
+stages:
+  get_data:
+    cmd: uv run --locked python -m src.get_data
+    deps:
+    - path: src/get_data.py
+      hash: md5
+      md5: 3cdc149d47fc9b8ea2580a8bb948a7a7
+      size: 808
+    outs:
+    - path: data/raw/titanic.arff
+      hash: md5
+      md5: 60ac7205eee0ba5045c90b3bba95b1c4
+      size: 118039
+  prepare:
+    cmd: uv run --locked python -m src.prepare
+    deps:
+    - path: data/raw/titanic.arff
+      hash: md5
+      md5: 60ac7205eee0ba5045c90b3bba95b1c4
+      size: 118039
+    - path: src/get_data.py
+      hash: md5
+      md5: 3cdc149d47fc9b8ea2580a8bb948a7a7
+      size: 808
+    - path: src/prepare.py
+      hash: md5
+      md5: 7dd6b15fda0d3ec5d6d4b20717286bff
+      size: 948
+    - path: uv.lock
+      hash: md5
+      md5: b71aef56023030bb562033f7557e70e0
+      size: 188635
+    outs:
+    - path: data/prepared/titanic.csv
+      hash: md5
+      md5: f653d6c768feeea482ba77590f5e7c7d
+      size: 31461
