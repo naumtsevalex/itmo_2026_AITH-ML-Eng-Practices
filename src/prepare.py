@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from src.get_data import DATA_PATH
 
@@ -25,6 +26,10 @@ def read_titanic():
 
 def main():
     data = read_titanic()[NUMERIC + CATEGORICAL + [TARGET]]
+    data, _ = train_test_split(
+        data, train_size=0.5, random_state=42, stratify=data[TARGET]
+    )
+    data = data.sort_index()
     PREPARED_PATH.parent.mkdir(parents=True, exist_ok=True)
     data.to_csv(PREPARED_PATH, index=False)
     print(f"Prepared {len(data):,} passengers in {PREPARED_PATH}")
