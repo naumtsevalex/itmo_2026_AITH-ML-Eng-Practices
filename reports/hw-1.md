@@ -1,8 +1,21 @@
 # ДЗ №1. Воспроизводимый ML-проект
 
-Загрузил Titanic №40945 с OpenML без токена и проверил SHA-256 исходного файла.
-Настроил зависимости через `uv.lock` и проверки Ruff через pre-commit.
-Команды из [README](../README.md) проверил в чистой копии проекта.
+## Как проходит запуск
+
+1. `uv sync --locked` устанавливает зависимости в `.venv`.
+   [Настройки проекта](../pyproject.toml#L1) · [Зафиксированные версии](../uv.lock)
+2. `uv run pre-commit run --all-files` проверяет Python-код через Ruff.
+   `uv run pre-commit install` подключает те же проверки к будущим коммитам.
+   [Конфигурация проверок](../.pre-commit-config.yaml#L1)
+3. `uv run python -m src.get_data` скачивает Titanic без токена, проверяет SHA-256
+   и сохраняет файл в `data/raw/titanic.arff`.
+   [Датасет OpenML](https://www.openml.org/d/40945) · [Код загрузки](../src/get_data.py#L12)
+4. `uv run python -m src.train` читает этот файл, обучает логистическую регрессию
+   на 80% данных и оценивает её на оставшихся 20%. Команда создаёт
+   `artifacts/model.pkl` и `artifacts/metrics.json` локально.
+   [Код обучения](../src/train.py#L23) · [Метрики проверенного запуска](hw-1/metrics.json)
+
+Команды проверены в чистой копии проекта. [Инструкция запуска](../README.md#запуск)
 
 ## Загрузка данных
 
