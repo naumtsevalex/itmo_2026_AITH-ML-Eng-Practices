@@ -31,3 +31,47 @@ uv run python -m src.train
 выборке, а также размеры обучающей и тестовой выборок.
 
 [Отчёт по ДЗ №1](reports/hw-1.md)
+
+## ДЗ №2. Версии данных в DVC
+
+Создайте исходный ARFF и подготовленный CSV для текущего коммита.
+
+```bash
+uv sync --locked
+uv run dvc repro
+uv run dvc status
+```
+
+В `.dvc/config` настроено локальное хранилище `titanic-dvc-storage` рядом с
+папкой репозитория. На другой машине его можно заполнить из публичного
+источника. В корне свежего клона выполните команды ниже.
+
+```bash
+uv sync --locked
+git switch --detach data-v1
+uv run dvc repro
+uv run dvc push
+git switch --detach data-v2
+uv run dvc repro
+uv run dvc push
+git switch main
+```
+
+Чтобы проверить восстановление на этой же машине, клонируйте репозиторий ещё
+раз в соседнюю папку. Оба клона будут использовать одно локальное хранилище.
+В новом клоне выполните следующие команды.
+
+```bash
+uv sync --locked
+git switch --detach data-v1
+uv run dvc pull
+uv run dvc status
+wc -l data/prepared/titanic.csv
+git switch --detach data-v2
+uv run dvc pull
+uv run dvc status
+wc -l data/prepared/titanic.csv
+```
+
+С учётом заголовка `wc -l` покажет 1 310 и 655 строк соответственно.
+[Схема данных](data/README.md) · [Отчёт по ДЗ №2](reports/hw-2.md)
