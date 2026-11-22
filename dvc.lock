@@ -29,8 +29,8 @@ stages:
       size: 1137
     - path: uv.lock
       hash: md5
-      md5: b71aef56023030bb562033f7557e70e0
-      size: 188635
+      md5: 6ea3d1a3d0ae04c361753c50f3eab0fd
+      size: 260661
     outs:
     - path: data/prepared/titanic.csv
       hash: md5
