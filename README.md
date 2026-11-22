@@ -75,3 +75,49 @@ wc -l data/prepared/titanic.csv
 
 С учётом заголовка `wc -l` покажет 1 310 и 655 строк соответственно.
 [Схема данных](data/README.md) · [Отчёт по ДЗ №2](reports/hw-2.md)
+
+## ДЗ №3. Эксперименты в MLflow
+
+Выполните команды из корня репозитория на версии `hw-3` или в `main`.
+
+### Подготовить данные
+
+Если локальный DVC remote уже заполнен в ДЗ №2, переходите к запуску
+экспериментов. На новой машине заполните его из OpenML в соседнем клоне.
+
+```bash
+git clone --branch data-v1 . ../titanic-hw3-data-v1
+(
+  cd ../titanic-hw3-data-v1
+  uv sync --locked
+  uv run dvc repro
+  uv run dvc push
+)
+```
+
+### Записать три запуска
+
+```bash
+uv sync --locked
+mkdir -p artifacts/hw-3
+uv run dvc get . data/prepared/titanic.csv --rev data-v1 --out artifacts/hw-3/titanic.csv
+uv run python -m src.experiments
+```
+
+DVC восстанавливает CSV версии `data-v1` в отдельную папку внутри
+`artifacts/`. Скрипт проверяет SHA-256, один раз делит данные на train/test
+и записывает три запуска с параметрами, метриками и моделями. Повторный запуск
+добавляет ещё три записи. SQLite-база и модели хранятся в `artifacts/hw-3/`.
+
+### Открыть результаты
+
+```bash
+uv run mlflow ui --backend-store-uri sqlite:///artifacts/hw-3/mlflow.db --host 127.0.0.1 --port 5000
+```
+
+Откройте [локальный MLflow](http://127.0.0.1:5000), выберите эксперимент
+**Titanic HW3** и переключитесь в **Model training → Runs**. Для сравнения
+отметьте три запуска и нажмите **Compare**.
+В карточке каждого запуска модель находится в **Artifacts → model**.
+
+[Отчёт по ДЗ №3](reports/hw-3.md)
