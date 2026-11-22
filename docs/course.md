@@ -1,7 +1,7 @@
 # Инженерные практики в ML и анализе данных
 
 Шесть домашних заданий на одном ML-проекте и один доклад. Наш проект — Titanic.
-[Сайт курса](https://enginiring-practices-ml-4e22ab.gitlab.io/1.intro/) · [Задания и дедлайны](https://enginiring-practices-ml-4e22ab.gitlab.io/1.intro/5.homework.html) · [Распределение докладов](https://docs.google.com/spreadsheets/d/17ZejgOuJRZUdXsoRE7Oni_mPJdjMI4-XHUHkGwdBKRI/edit)
+[Сайт курса](https://enginiring-practices-ml-4e22ab.gitlab.io/) · [Задания и дедлайны](https://enginiring-practices-ml-4e22ab.gitlab.io/1.intro/5.homework.html) · [Распределение докладов](https://docs.google.com/spreadsheets/d/17ZejgOuJRZUdXsoRE7Oni_mPJdjMI4-XHUHkGwdBKRI/edit)
 
 ## Занятия и записи
 
@@ -21,6 +21,8 @@
 | 4. Автоматизация пайплайна | **13 декабря** | |
 | 5. CI для ML-проекта | **17 декабря** | |
 | 6. Документация проекта | **20 декабря** | |
+
+![Расписание выдачи и дедлайнов шести домашних заданий](course-deadlines.png)
 
 ## Что указать в ведомости
 
