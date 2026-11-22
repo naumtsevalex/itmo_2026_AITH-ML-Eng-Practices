@@ -14,15 +14,19 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src.prepare import CATEGORICAL, NUMERIC, TARGET, read_titanic
 
+SPLIT_SEED = 42
+TEST_SIZE = 0.2
 
-def main():
-    data = read_titanic()
+
+def split_data(data):
     features = data[NUMERIC + CATEGORICAL]
     labels = data[TARGET]
-    x_train, x_test, y_train, y_test = train_test_split(
-        features, labels, test_size=0.2, random_state=42, stratify=labels
+    return train_test_split(
+        features, labels, test_size=TEST_SIZE, random_state=SPLIT_SEED, stratify=labels
     )
 
+
+def build_model(c=1.0):
     preprocess = ColumnTransformer(
         [
             (
@@ -33,11 +37,22 @@ def main():
             ("categorical", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL),
         ]
     )
-    model = make_pipeline(preprocess, LogisticRegression())
-    model.fit(x_train, y_train)
-    metrics = {
+    return make_pipeline(preprocess, LogisticRegression(C=c))
+
+
+def evaluate(model, x_test, y_test):
+    return {
         "accuracy": accuracy_score(y_test, model.predict(x_test)),
         "roc_auc": roc_auc_score(y_test, model.predict_proba(x_test)[:, 1]),
+    }
+
+
+def main():
+    x_train, x_test, y_train, y_test = split_data(read_titanic())
+    model = build_model()
+    model.fit(x_train, y_train)
+    metrics = {
+        **evaluate(model, x_test, y_test),
         "train_rows": len(x_train),
         "test_rows": len(x_test),
     }
