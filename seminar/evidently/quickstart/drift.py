@@ -14,7 +14,13 @@ def trips_on(date):
     start = pd.Timestamp(date)
     trips = pd.read_parquet(
         SOURCE,
-        columns=["fare_amount", "payment_type"],
+        columns=[
+            "fare_amount",
+            "payment_type",
+            "trip_distance",
+            "passenger_count",
+            "PULocationID",
+        ],
         filters=[
             ("tpep_pickup_datetime", ">=", start),
             ("tpep_pickup_datetime", "<", start + pd.Timedelta(days=1)),
@@ -24,6 +30,7 @@ def trips_on(date):
         ],
     )
     trips["payment_type"] = trips["payment_type"].map({1: "card", 2: "cash"})
+    trips["PULocationID"] = trips["PULocationID"].astype(str)
     print(date, len(trips), "trips; median fare:", trips["fare_amount"].median())
     print(trips["payment_type"].value_counts(normalize=True).round(4))
     return trips
