@@ -8,6 +8,8 @@
 указана как `Public`. Скрипт скачивает исходный ARFF без токена в
 `data/raw/titanic.arff` и проверяет SHA-256.
 
+Доклад к семинару №2 — [Evidently: drift и качество данных](seminar/evidently/).
+
 ## Запуск
 
 Нужны Git, Python 3.11 и [uv](https://docs.astral.sh/uv/getting-started/installation/).
