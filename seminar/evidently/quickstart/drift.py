@@ -1,26 +1,55 @@
-"""Run from the repository root after downloading the Titanic ARFF."""
+"""Compare two days of NYC yellow taxi trips and simulate two data issues."""
 
 from pathlib import Path
 
+import pandas as pd
 from evidently import Report
 from evidently.presets import DataDriftPreset
 
-from src.prepare import read_titanic
+OUTPUT = Path("artifacts/evidently")
+SOURCE = OUTPUT / "yellow_tripdata_2023-11.parquet"
+
+
+def trips_on(date):
+    start = pd.Timestamp(date)
+    trips = pd.read_parquet(
+        SOURCE,
+        columns=["fare_amount", "payment_type"],
+        filters=[
+            ("tpep_pickup_datetime", ">=", start),
+            ("tpep_pickup_datetime", "<", start + pd.Timedelta(days=1)),
+            ("fare_amount", ">", 0),
+            ("fare_amount", "<=", 200),
+            ("payment_type", "in", [1, 2]),
+        ],
+    )
+    trips["payment_type"] = trips["payment_type"].map({1: "card", 2: "cash"})
+    print(date, len(trips), "trips; median fare:", trips["fare_amount"].median())
+    print(trips["payment_type"].value_counts(normalize=True).round(4))
+    return trips
 
 
 def main():
-    reference = read_titanic()[["fare", "age"]]
-    current = reference.copy()
-    output = Path("artifacts/evidently")
-    output.mkdir(parents=True, exist_ok=True)
+    reference = trips_on("2023-11-16")
+    current = trips_on("2023-11-23")
 
     for name, batch in [
         ("control", current),
-        ("shifted", current.assign(fare=current["fare"] + 30)),
+        ("shifted", current.assign(fare_amount=current["fare_amount"] + 10)),
+        ("payment", current.assign(payment_type="cash")),
     ]:
-        report = Report([DataDriftPreset(num_method="wasserstein", num_threshold=0.1)])
+        report = Report(
+            [
+                DataDriftPreset(
+                    num_method="wasserstein",
+                    num_threshold=0.1,
+                    cat_method="jensenshannon",
+                    cat_threshold=0.1,
+                )
+            ]
+        )
         result = report.run(current_data=batch, reference_data=reference)
-        result.save_html(str(output / f"{name}.html"))
+        result.save_html(str(OUTPUT / f"{name}.html"))
         print(name, result.json())
 
 
