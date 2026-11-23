@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Evidently · Drift и качество данных</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#192531;font:clamp(17px,2.45vmin,29px)/1.45 system-ui,sans-serif}main{max-width:1200px;margin:auto;padding:clamp(24px,6vw,88px) clamp(20px,5vw,72px) 90px}section{display:none}section.active{display:block}h1,h2{line-height:1.09;letter-spacing:-.04em;margin:0 0 .6em}h1{font-size:clamp(48px,8vw,108px)}h2{font-size:clamp(34px,5vw,66px)}p{max-width:48em}a{color:#14648a;text-underline-offset:3px}pre{font:clamp(14px,2.1vmin,23px)/1.55 ui-monospace,monospace;background:#f1f5f7;padding:1em;overflow:auto;border-left:4px solid #27718b}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:.55em .5em;border-bottom:1px solid #d0dade}small,.note{color:#526470;font-size:.8em}nav{position:fixed;bottom:0;left:0;width:100%;background:#fff;border-top:1px solid #d0dade;display:flex;align-items:center;justify-content:center;gap:1em;padding:8px}button{font:inherit;cursor:pointer;border:0;background:#eff4f6;padding:0 .6em;color:#24576c}button:disabled{opacity:.35}#count{font-size:15px}strong{color:#124c63}.cover{padding-top:10vh}li{margin:.45em 0}.links{font-size:.85em}figure{margin:1em 0}.report{display:block;max-width:100%;max-height:50vh;width:auto;height:auto} @media print{nav{display:none}main{padding:0}section,section.active{display:block;break-after:page;padding:10mm}section:last-child{break-after:auto}.cover{padding-top:15mm}body{font-size:16pt}h2{font-size:32pt}pre{font-size:14pt}@page{size:landscape;margin:8mm}}
+</style>
+<main>
+<section class="active cover"><h1>Evidently</h1><h2>Drift и качество данных</h2><p>Как обнаружить изменение тарифа среди 117 тысяч поездок за день?</p><p class="note">Александр Наумцев · ИТМО · 30 ноября 2026</p></section>
+<section><h2>Что изменилось в данных?</h2><p><strong>Data drift</strong> — изменение распределения признака между эталонной и текущей партиями. Его можно обнаружить сразу после загрузки данных.</p><p><strong>Качество модели</strong> проверяем по прогнозам и фактическим исходам. Для модели стоимости поездки можно сопоставить ошибку прогноза в долларах за оба дня.</p><p>В сегодняшнем демо измеряем drift пяти признаков.</p></section>
+<section><h2>Две среды в Нью-Йорке</h2><table><tr><th>Партия</th><th>Поездки</th><th>Медианный тариф</th></tr><tr><td>8 ноября 2023 · reference</td><td>117 271</td><td>$14,20</td></tr><tr><td>15 ноября 2023 · current</td><td>117 344</td><td>$14,20</td></tr></table><p>Берём все поездки жёлтых такси с положительным базовым тарифом до $200 включительно и оплатой картой или наличными.</p><p class="note">Пять признаков: тариф, расстояние, число пассажиров, способ оплаты и зона посадки.</p><p class="links"><a href="https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-11.parquet">Исходные данные NYC TLC · Parquet</a></p></section>
+<section><h2>Как получить первый отчёт</h2><pre><code>reference = trips_on("2023-11-08")
+current = trips_on("2023-11-15")
+
+report = Report([DataDriftPreset(
+    num_method="wasserstein", num_threshold=0.1,
+    cat_method="jensenshannon", cat_threshold=0.1,
+)])
+result = report.run(reference_data=reference, current_data=current)
+result.save_html("control.html")</code></pre><p>Каждый метод сравнивает распределения одного признака. Для чисел это нормированное расстояние Вассерштейна, для категорий — расстояние Дженсена — Шеннона.</p><p class="links"><a href="https://naumtsevalex.github.io/itmo_2026_AITH-ML-Eng-Practices/reports/control.html" target="_blank" rel="noopener">Открыть исходный отчёт ↗</a></p></section>
+<section><h2>Меняем один признак</h2><p>Имитируем ошибочную надбавку в $10. Строки и остальные четыре признака берём из той же партии за 15 ноября.</p><pre><code>shifted = current.assign(fare_amount=current["fare_amount"] + 10)
+result = report.run(reference_data=reference, current_data=shifted)
+result.save_html("shifted.html")</code></pre><p>В отчёте раскрываем строку <b>fare_amount</b> и сравниваем распределения стоимости.</p><p class="links"><a href="https://naumtsevalex.github.io/itmo_2026_AITH-ML-Eng-Practices/reports/shifted.html" target="_blank" rel="noopener">Открыть отчёт после надбавки ↗</a></p></section>
+<section><h2>Какой тест сработал?</h2><figure><img class="report" src="drift-table.png" alt="Таблица Evidently: Detected для fare_amount, Not Detected для остальных четырёх признаков"></figure><p>Расстояние по тарифу выросло с 0,0095 до <strong>0,6075</strong> и пересекло порог <strong>0,1</strong>. Сигнал по одному из пяти признаков даёт 20%. Порог сводной карточки по всему датасету — 50%.</p></section>
+<section><h2>А если сломались категории?</h2><p>Берём исходную партию за 15 ноября. Представим, что после изменения справочника каждая оплата записалась как наличная.</p><pre><code>payment = current.assign(payment_type="cash")
+result = report.run(reference_data=reference, current_data=payment)</code></pre><p>Расстояние Дженсена — Шеннона по способу оплаты выросло с 0,000046 до <strong>0,6927</strong>. Расстояние по тарифу осталось на уровне 0,0095.</p><p class="links"><a href="https://naumtsevalex.github.io/itmo_2026_AITH-ML-Eng-Practices/reports/payment.html" target="_blank" rel="noopener">Открыть отчёт по способу оплаты ↗</a></p></section>
+<section><h2>Что делать после сигнала?</h2><ol><li><strong>Тариф.</strong> Сверить несколько записей с чеками, проверить надбавки, единицы измерения и дату изменения правил.</li><li><strong>Способ оплаты.</strong> Сверить исходные коды платежей и их преобразование в <code>card</code> и <code>cash</code>.</li><li><strong>Модель.</strong> Когда доступны фактические исходы, сравнить ошибку на двух периодах и отдельно в затронутом сегменте.</li></ol><p class="links"><a href="https://github.com/naumtsevalex/itmo_2026_AITH-ML-Eng-Practices/blob/main/seminar/evidently/quickstart/demo.ipynb">Ноутбук с кодом и выводом</a> · <a href="https://docs.evidentlyai.com/metrics/customize_data_drift">Методы и пороги Evidently</a> · <a href="https://docs.evidentlyai.com/metrics/preset_data_drift">Data Drift Preset</a></p></section>
+</main>
+<nav aria-label="Навигация по слайдам"><button id="prev" aria-label="Предыдущий слайд">←</button><span id="count" aria-live="polite"></span><button id="next" aria-label="Следующий слайд">→</button></nav>
+<script>
+const slides = Array.from(document.querySelectorAll('main section'));
+const previous = document.querySelector('#prev'), next = document.querySelector('#next');
+function position() {
+  const number = Number(location.hash.slice(1));
+  return Number.isInteger(number) && number >= 1 && number <= slides.length ? number : 1;
+}
+function show() {
+  const number = position();
+  slides.forEach((slide, index) => slide.classList.toggle('active', index + 1 === number));
+  previous.disabled = number === 1;
+  next.disabled = number === slides.length;
+  document.querySelector('#count').textContent = number + ' / ' + slides.length;
+  window.scrollTo(0,0);
+}
+function move(step) { location.hash = Math.min(slides.length, Math.max(1, position() + step)); }
+previous.onclick = () => move(-1);
+next.onclick = () => move(1);
+document.addEventListener('keydown', event => {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
+  if (['ArrowRight','PageDown','ArrowLeft','PageUp'].includes(event.key)) {
+    event.preventDefault();
+    move(['ArrowRight','PageDown'].includes(event.key) ? 1 : -1);
+  }
+});
+window.addEventListener('hashchange', show);
+show();
+</script>
+</html>
