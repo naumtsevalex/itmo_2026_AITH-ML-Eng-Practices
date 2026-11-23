@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from evidently import Report
 from evidently.presets import DataDriftPreset
@@ -40,9 +41,11 @@ def main():
     reference = trips_on("2023-11-08")
     current = trips_on("2023-11-15")
 
+    surcharge = np.random.default_rng(42).normal(loc=6, scale=2, size=len(current))
+
     for name, batch in [
         ("control", current),
-        ("shifted", current.assign(fare_amount=current["fare_amount"] + 10)),
+        ("shifted", current.assign(fare_amount=current["fare_amount"] + surcharge)),
         ("payment", current.assign(payment_type="cash")),
     ]:
         report = Report(
