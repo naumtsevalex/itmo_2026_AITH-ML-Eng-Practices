@@ -30,8 +30,8 @@ def trips_on(date):
 
 
 def main():
-    reference = trips_on("2023-11-16")
-    current = trips_on("2023-11-23")
+    reference = trips_on("2023-11-08")
+    current = trips_on("2023-11-15")
 
     for name, batch in [
         ("control", current),
